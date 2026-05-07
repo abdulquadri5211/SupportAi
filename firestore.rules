@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function existingData() {
+      return resource.data;
+    }
+
+    function incomingData() {
+      return request.resource.data;
+    }
+
+    function isWorkspaceMember(workspaceId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.workspaceId == workspaceId;
+    }
+
+    function isWorkspaceOwner(workspaceId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.workspaceId == workspaceId &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+    }
+
+    // --- RULES ---
+
+    // User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId && 
+                    incomingData().diff(existingData()).affectedKeys().hasOnly(['workspaceId', 'role', 'onboarded']);
+    }
+
+    // Workspaces
+    match /workspaces/{workspaceId} {
+      allow get: if isWorkspaceMember(workspaceId);
+      allow create: if isSignedIn() && incomingData().ownerId == request.auth.uid;
+      allow update: if isWorkspaceOwner(workspaceId);
+      
+      // Chatbots
+      match /chatbots/{chatbotId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow write: if isWorkspaceMember(workspaceId);
+      }
+
+      // Tickets
+      match /tickets/{ticketId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        // Customers might need to create tickets (anonymous or specific role)
+        // For now, allow workspace members to manage them
+        allow create: if isWorkspaceMember(workspaceId) || isSignedIn(); 
+        allow update: if isWorkspaceMember(workspaceId);
+      }
+
+      // Logs
+      match /logs/{logId} {
+        allow read: if isWorkspaceMember(workspaceId);
+        allow create: if isWorkspaceMember(workspaceId);
+      }
+    }
+  }
+}

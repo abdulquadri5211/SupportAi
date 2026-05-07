@@ -1,0 +1,6 @@
+{
+  "name": "SupportPilot AI",
+  "description": "Professional AI-powered customer support SaaS with multilingual capabilities, team collaboration, and automated ticketing.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}

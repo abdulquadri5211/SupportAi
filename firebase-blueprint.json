@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Base user data and workspace association",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "admin", "member"] },
+        "onboarded": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "workspaceId", "role"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Company/Workspace settings",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "businessType": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "businessType", "ownerId"]
+    },
+    "Chatbot": {
+      "title": "Chatbot Configuration",
+      "description": "AI settings and appearance",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "personality": { "type": "string" },
+        "tone": { "type": "string" },
+        "welcomeMessage": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "position": { "type": "string" }
+      },
+      "required": ["name", "personality"]
+    },
+    "Ticket": {
+      "title": "Support Ticket",
+      "description": "Customer support requests",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "status", "priority", "customerEmail"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Public user profiles"
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Workspace root"
+    },
+    "/workspaces/{workspaceId}/chatbots/{chatbotId}": {
+      "schema": "Chatbot",
+      "description": "Chatbot instances"
+    },
+    "/workspaces/{workspaceId}/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "Customer tickets"
+    }
+  }
+}
